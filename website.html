@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmos | Solar System Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- RESET & VARIABLES --- */
+        :root {
+            --bg-deep: #050714;
+            --bg-accent: #0f172a;
+            --primary: #00f0ff;
+            --secondary: #7000ff;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --sun-color: #ffaa00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Exo 2', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, var(--secondary), var(--primary));
+            border-radius: 4px;
+        }
+
+        /* --- BACKGROUND STARS ANIMATION --- */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite;
+            opacity: var(--opacity);
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: var(--opacity); transform: scale(1); }
+            50% { opacity: 0.2; transform: scale(0.5); }
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            background: linear-gradient(to bottom, rgba(5,7,20,0.9), transparent);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--primary), white);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: var(--primary);
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: white;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            perspective: 1000px;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            position: absolute;
+            z-index: 10;
+            text-align: center;
+            pointer-events: none; /* Let clicks pass through to animation if needed */
+        }
+
+        .hero h1 {
+            font-size: 5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+            animation: fadeUp 1s ease-out forwards;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2rem auto;
+            animation: fadeUp 1.2s ease-out forwards;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            backdrop-filter: blur(5px);
+            transition: 0.3s;
+            pointer-events: auto;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: fadeUp 1.4s ease-out forwards;
+        }
+
+        .cta-btn:hover {
+            background: var(--primary);
+            color: black;
+            box-shadow: 0 0 30px var(--primary);
+        }
+
+        /* --- CSS 3D SOLAR SYSTEM ANIMATION --- */
+        .solar-system {
+            position: relative;
+            width: 800px;
+            height: 800px;
+            transform-style: preserve-3d;
+            transform: rotateX(60deg) rotateZ(-20deg);
+            opacity: 0.6;
+            animation: systemEntry 2s ease-out forwards;
+        }
+
+        .orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transform-style: preserve-3d;
+        }
+
+        .sun {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle at 30% 30%, #ffd700, #ff8c00, #ff4500);
+            box-shadow: 0 0 60px #ff4500;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .orbit-mercury { width: 140px; height: 140px; animation: orbit 4s linear infinite; }
+        .orbit-venus { width: 200px; height: 200px; animation: orbit 7s linear infinite; }
+        .orbit-earth { width: 300px; height: 300px; animation: orbit 10s linear infinite; }
+        .orbit-mars { width: 400px; height: 400px; animation: orbit 13s linear infinite; }
+        .orbit-jupiter { width: 560px; height: 560px; animation: orbit 20s linear infinite; }
+        .orbit-saturn { width: 700px; height: 700px; animation: orbit 25s linear infinite; }
+
+        .planet-preview {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: inset -2px -2px 6px rgba(0,0,0,0.8);
+        }
+        /* Counter-rotate to keep lighting consistent-ish */
+        .orbit-mercury .planet-preview { width: 10px; height: 10px; background: #a5a5a5; }
+        .orbit-venus .planet-preview { width: 15px; height: 15px; background: #e3bb76; }
+        .orbit-earth .planet-preview { width: 16px; height: 16px; background: #2f6a69; box-shadow: 0 0 5px #00f0ff; }
+        .orbit-mars .planet-preview { width: 12px; height: 12px; background: #c1440e; }
+        .orbit-jupiter .planet-preview { width: 35px; height: 35px; background: radial-gradient(circle at 30% 30%, #d8ca9d, #a59186); }
+        .orbit-saturn .planet-preview { width: 28px; height: 28px; background: #ead6b8; }
+        
+        /* Saturn Rings */
+        .orbit-saturn .planet-preview::after {
+            content: '';
+            position: absolute;
+            width: 46px;
+            height: 46px;
+            border: 4px solid rgba(200, 180, 150, 0.6);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateX(70deg);
+        }
+
+        @keyframes orbit {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* --- PLANETARY GRID SECTION --- */
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin: 4rem 0 2rem;
+            background: linear-gradient(to right, #fff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* --- GLASS CARDS --- */
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(15px);
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 40px -10px rgba(0, 240, 255, 0.2);
+        }
+
+        .card:hover .planet-visual {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .planet-visual {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            transition: transform 0.5s ease;
+            box-shadow: inset -4px -4px 10px rgba(0,0,0,0.8);
+        }
+
+        /* Planet Styles via CSS Gradients */
+        .p-mercury { background: radial-gradient(circle at 30% 30%, #b3b3b3, #464646); }
+        .p-venus { background: radial-gradient(circle at 30% 30%, #e6dbb8, #b68f38); }
+        .p-earth { background: radial-gradient(circle at 30% 30%, #4facfe, #00f2fe, #1e3c72); }
+        .p-mars { background: radial-gradient(circle at 30% 30%, #ff6b6b, #8a2e2e); }
+        .p-jupiter { 
+            background: linear-gradient(180deg, #5c483a 10%, #d6c6ad 20%, #8c735d 40%, #d6c6ad 60%, #5c483a 90%);
+            transform: rotate(-30deg); 
+        }
+        .p-saturn { 
+            background: #ead6b8; 
+            position: relative;
+        }
+        .p-saturn::before {
+            content: '';
+            position: absolute;
+            width: 160%;
+            height: 40%;
+            border: 2px solid rgba(199, 177, 137, 0.6);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .p-uranus { background: radial-gradient(circle at 30% 30%, #d1f3f8, #63a4ff); }
+        .p-neptune { background: radial-gradient(circle at 30% 30%, #3e56f4, #121c61); }
+
+        .card h2 {
+            font-size: 1.8rem;
+            color: white;
+        }
+
+        .card-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.05);
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 0.2rem;
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+        }
+
+        .card p {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+
+        /* --- INFO SECTION --- */
+        .info-section {
+            padding: 4rem 5%;
+            display: flex;
+            align-items: center;
+            gap: 4rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+
+        .info-text {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .info-visual {
+            flex: 1;
+            min-width: 300px;
+            height: 400px;
+            background: radial-gradient(circle at 50% 50%, rgba(112, 0, 255, 0.1), transparent 70%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Animated atom/orbit graphic for stats */
+        .atom-ring {
+            position: absolute;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 50%;
+            animation: spin 10s linear infinite;
+        }
+        .ring-1 { width: 200px; height: 200px; border-color: var(--primary); transform: rotateX(60deg); }
+        .ring-2 { width: 200px; height: 200px; border-color: var(--secondary); animation-duration: 15s; transform: rotateX(60deg) rotateY(60deg); }
+        .ring-3 { width: 200px; height: 200px; border-color: white; animation-duration: 20s; transform: rotateX(60deg) rotateY(-60deg); }
+
+        @keyframes spin {
+            0% { transform: rotate3d(1, 1, 1, 0deg); }
+            100% { transform: rotate3d(1, 1, 1, 360deg); }
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            text-align: center;
+            padding: 3rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: 4rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* --- UTILS --- */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes systemEntry {
+            from { opacity: 0; transform: rotateX(90deg) scale(0.5); }
+            to { opacity: 0.6; transform: rotateX(60deg) rotateZ(-20deg) scale(1); }
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 3rem; }
+            .solar-system { width: 400px; height: 400px; margin-top: -100px; }
+            .nav-links { display: none; } /* Simplified for single file demo */
+            .info-section { flex-direction: column-reverse; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Star Background Script Generated Elements -->
+    <div class="stars-container" id="stars"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">COSMOS</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#planets">Planets</a></li>
+            <li><a href="#about">About</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <!-- 3D CSS Solar System Background -->
+        <div class="solar-system">
+            <div class="sun"></div>
+            <div class="orbit orbit-mercury"><div class="planet-preview"></div></div>
+            <div class="orbit orbit-venus"><div class="planet-preview"></div></div>
+            <div class="orbit orbit-earth"><div class="planet-preview"></div></div>
+            <div class="orbit orbit-mars"><div class="planet-preview"></div></div>
+            <div class="orbit orbit-jupiter"><div class="planet-preview"></div></div>
+            <div class="orbit orbit-saturn"><div class="planet-preview"></div></div>
+        </div>
+
+        <div class="hero-content">
+            <h1>Beyond the<br>Horizon</h1>
+            <p>Explore the wonders of our solar neighborhood. From the scorching surface of Mercury to the icy winds of Neptune.</p>
+            <a href="#planets" class="cta-btn">Start Journey</a>
+        </div>
+    </section>
+
+    <!-- Info Section -->
+    <section class="info-section" id="about">
+        <div class="info-text card visible">
+            <h2 style="margin-bottom: 1rem;">The Solar System</h2>
+            <p style="margin-bottom: 1rem;">
+                Our planetary system is located in an outer spiral arm of the Milky Way galaxy. It consists of our star, the Sun, and everything bound to it by gravity — the planets Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune; dwarf planets such as Pluto; dozens of moons; and millions of asteroids, comets, and meteoroids.
+            </p>
+            <p>
+                We live in a dynamic, ever-changing environment that is beautiful, dangerous, and scientifically fascinating.
+            </p>
+        </div>
+        <div class="info-visual">
+            <div class="atom-ring ring-1"></div>
+            <div class="atom-ring ring-2"></div>
+            <div class="atom-ring ring-3"></div>
+            <div style="font-size: 4rem; font-weight: 900; color: white; text-shadow: 0 0 20px var(--primary);">8</div>
+        </div>
+    </section>
+
+    <!-- Planet Grid -->
+    <h2 class="section-title" id="planets">Planetary Data</h2>
+    <div class="grid-container">
+        <!-- Mercury -->
+        <div class="card">
+            <div class="card-header">
+                <div class="planet-visual p-mercury"></div>
+                <h2>Mercury</h2>
+            </div>
+            <div class="card-stats">
+                <div class="stat"><span class="stat-label">Diameter</span>4,880 km</div>
+                <div class="stat"><span class="stat-label">Day Length</span>59 Earth Days</div>
+            </div>
+            <p>The smallest planet in our solar system and closest to the Sun—is only slightly larger than Earth's Moon. Mercury is the fastest planet, zipping around the Sun every 88 Earth days.</p>
+        </div>
+
+        <!-- Venus -->
+        <div class="card">
+            <div class="card-header">
+                <div class="planet-visual p-venus"></div>
+                <h2>Venus</h2>
+            </div>
+            <div class="card-stats">
+                <div class="stat"><span class="stat-label">Diameter</span>12,104 km</div>
+                <div class="stat"><span class="stat-label">Temp</span>471°C</div>
+            </div>
+            <p>Spins slowly in the opposite direction from most planets. Its thick atmosphere traps heat in a runaway greenhouse effect, making it the hottest planet in our solar system.</p>
+        </div>
+
+        <!-- Earth -->
+        <div class="card">
+            <div class="card-header">
+                <div class="planet-visual p-earth"></div>
+                <h2>Earth</h2>
+            </div>
+            <div class="card-stats">
+                <div class="stat"><span class="stat-label">Diameter</span>12,742 km</div>
+                <div class="stat"><span class="stat-label">Moons</span>1</div>
+            </div>
+            <p>Our home planet is the third planet from the Sun, and the only place we know of so far that's inhabited by living things. It's the only world with liquid water on the surface.</p>
+        </div>
+
+        <!-- Mars -->
+        <div class="card">
+            <div class="card-header">
+                <div class="planet-visual p-mars"></div>
+                <h2>Mars</h2>
+            </div>
+            <div class="card-stats">
+                <div class="stat"><span class="stat-label">Diameter</span>6,779 km</div>
+                <div class="stat"><span class="stat-label">Moons</span>2</div>
+            </div>
+            <p>Mars is a dusty, cold, desert world with a very thin atmosphere. There is strong evidence that Mars was – billions of years ago – wetter and warmer, with a thick atmosphere.</p>
+        </div>
+
+        <!-- Jupiter -->
+        <div class="card">
+            <div class="card-header">
+                <div class="planet-visual p-jupiter"></div>
+                <h2>Jupiter</h2>
+            </div>
+            <div class="card-stats">
+                <div class="stat"><span class="stat-label">Diameter</span>139,820 km</div>
+                <div class="stat"><span class="stat-label">Type</span>Gas Giant</div>
+            </div>
+            <p>Jupiter is more than twice as massive as all the other planets combined. The Great Red Spot is a centuries-old storm bigger than Earth.</p>
+        </div>
+
+        <!-- Saturn -->
+        <div class="card">
+            <div class="card-header">
+                <div class="planet-visual p-saturn"></div>
+                <h2>Saturn</h2>
+            </div>
+            <div class="card-stats">
+                <div class="stat"><span class="stat-label">Diameter</span>116,460 km</div>
+                <div class="stat"><span class="stat-label">Rings</span>7 Groups</div>
+            </div>
+            <p>Adorned with a dazzling, complex system of icy rings, Saturn is unique in our solar system. The other giant planets have rings, but none are as spectacular as Saturn's.</p>
+        </div>
+
+        <!-- Uranus -->
+        <div class="card">
+            <div class="card-header">
+                <div class="planet-visual p-uranus"></div>
+                <h2>Uranus</h2>
+            </div>
+            <div class="card-stats">
+                <div class="stat"><span class="stat-label">Diameter</span>50,724 km</div>
+                <div class="stat"><span class="stat-label">Tilt</span>97.77°</div>
+            </div>
+            <p>Uranus rotates at a nearly 90-degree angle from the plane of its orbit. This unique tilt makes Uranus appear to spin on its side.</p>
+        </div>
+
+        <!-- Neptune -->
+        <div class="card">
+            <div class="card-header">
+                <div class="planet-visual p-neptune"></div>
+                <h2>Neptune</h2>
+            </div>
+            <div class="card-stats">
+                <div class="stat"><span class="stat-label">Diameter</span>49,244 km</div>
+                <div class="stat"><span class="stat-label">Wind</span>2,100 km/h</div>
+            </div>
+            <p>Neptune is dark, cold and whipped by supersonic winds. It was the first planet located through mathematical calculations rather than by telescope.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Cosmos Explorer. Designed for the Stars.</p>
+    </footer>
+
+    <script>
+        // Generate Stars programmatically to keep HTML clean
+        const starsContainer = document.getElementById('stars');
+        const starCount = 200;
+
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            
+            // Random positioning
+            const x = Math.random() * 100;
+            const y = Math.random() * 100;
+            const size = Math.random() * 2 + 1; // 1px to 3px
+            const duration = Math.random() * 3 + 2; // 2s to 5s
+            const delay = Math.random() * 5;
+            const opacity = Math.random();
+
+            star.style.left = `${x}%`;
+            star.style.top = `${y}%`;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.setProperty('--duration', `${duration}s`);
+            star.style.setProperty('--opacity', opacity);
+            star.style.animationDelay = `${delay}s`;
+
+            starsContainer.appendChild(star);
+        }
+
+        // Intersection Observer for Scroll Animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target); // Only animate once
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.card').forEach(card => {
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
